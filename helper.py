@@ -151,7 +151,7 @@ def send_message(group_id="1042964394", message_queue=[]):
     message_queue.clear()
 
 def main():
-    global token, botUrl, botPort, last_real_id, api_key, headers
+    global token, botUrl, botPort, last_real_id, api_key, headers,timer_messages
     file = open("settings.json", "r")
     settings = json.load(file)
     botUrl = settings["botUrl"]
@@ -159,7 +159,7 @@ def main():
     token = settings["token"]
     last_real_id = settings["last_real_id"]
     api_key = settings.get("api_key", "")
-
+    timer_messages = settings.get("timer_messages", [])
     # Refresh headers after loading runtime token.
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -177,7 +177,9 @@ def main():
                 "botPort": botPort,
                 "token": token,
                 "last_real_id": last_real_id,
-                "api_key": api_key
+                "api_key": api_key,
+                "timer_messages": timer_messages
+
         }))
         file.close()
         time.sleep(5) 
