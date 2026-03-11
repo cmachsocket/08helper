@@ -69,7 +69,7 @@ def check_timer_messages():
             requests.post(
                 f"{botUrl}:{botPort}/send_group_msg",
                 json={
-                    "group_id": "817494034",
+                    "group_id": "1042964394",
                     "message": reminder_content
                 },
                 headers=headers
@@ -103,7 +103,7 @@ async def run_gpt_task(message):
 # 783463810
 def get_message():
     request_string = """{
-                    "group_id": "817494034",
+                    "group_id": "1019963716",
                     "message_seq": "textValue",
                     "count": 5,
                     "reverseOrder": true
@@ -127,7 +127,7 @@ def check_new_message(messages):
                 print(message["real_seq"])
         last_real_id = int(messages[-1]["real_seq"])
     return message_queue
-def send_message(group_id="817494034", message_queue=[]):
+def send_message(group_id="1042964394", message_queue=[]):
     for message in message_queue:
         time.sleep(1) # 每条消息间隔1秒发送
         if(message["message"].strip() == ""):
