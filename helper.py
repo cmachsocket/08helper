@@ -46,7 +46,8 @@ def add_timer_message(message):
     global timer_messages
     # 解析消息内容，提取时间和提醒内容
     try:
-        time_str, reminder_content = message.split(":", 1)
+        print(f"GPT回复的消息: {message}")
+        time_str, reminder_content = message.split(",", 1)
         time_str = time_str.strip()
         reminder_content = reminder_content.strip()
         # 将时间字符串转换为datetime对象
@@ -56,7 +57,7 @@ def add_timer_message(message):
         timer_messages.append((reminder_time, reminder_content))
         print(f"定时消息已添加: {reminder_time} - {reminder_content}")
     except ValueError:
-        print("消息格式错误，请使用 '时间 : 提醒内容' 的格式")
+        print("消息格式错误，请使用 '时间 , 提醒内容' 的格式")
 
 def check_timer_messages():
     global timer_messages
@@ -64,6 +65,7 @@ def check_timer_messages():
     for reminder_time, reminder_content in timer_messages:
         if current_time >= reminder_time:
             # 发送提醒消息
+            print(f"发送提醒消息: {reminder_content}")
             requests.post(
                 f"{botUrl}:{botPort}/send_group_msg",
                 json={
@@ -87,11 +89,11 @@ async def run_gpt_task(message):
         messages=[
             {
                 'role': 'system',
-                'content': '你是计算机8班的班级小助手，负责设置定时消息和转发消息，帮助同学们更好地使用机器人。'
+                'content': '你是计算机8班的班级小助手,负责设置定时消息和转发消息,帮助同学们更好地使用机器人。'
             },
             {
                 'role': 'user',
-                'content': message+"\n, 阅读这段消息后，判断是否需要提醒同学们，如果需要，请回复 \"时间 : 提醒内容\" , 其中时间的格式为 \"2026-MM-DD HH:MM\",提前半小时，如果不需要提醒，请回复 \"不需要提醒\""
+                'content': message+"\n, 阅读这段消息后，判断是否需要提醒同学们，如果需要，请回复 \"时间 , 提醒内容\" , 其中时间的格式为 \"2026-MM-DD HH:MM\",半角逗号,提前半小时，如果不需要提醒，请回复 \"不需要提醒\" ,不需要任何额外的文字"
             }
         ],
     )
@@ -128,6 +130,8 @@ def check_new_message(messages):
 def send_message(group_id="817494034", message_queue=[]):
     for message in message_queue:
         time.sleep(1) # 每条消息间隔1秒发送
+        if(message["message"].strip() == ""):
+            continue
 
         print(message["message_id"])
         if not message["message"].startswith("[CQ:"):
@@ -165,7 +169,8 @@ def main():
         messages = get_message()
         send_message(
         message_queue=check_new_message(messages))
-        print("Checked for new messages.")
+        check_timer_messages()
+        print("Loop completed, sleeping for 5 seconds...")
         file = open("settings.json","w") 
         file.write(json.dumps({
                 "botUrl": botUrl,
