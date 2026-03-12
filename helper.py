@@ -47,15 +47,16 @@ def add_timer_message(message):
     # 解析消息内容，提取时间和提醒内容
     try:
         print(f"GPT回复的消息: {message}")
-        time_str, reminder_content = message.split(",", 1)
-        time_str = time_str.strip()
-        reminder_content = reminder_content.strip()
-        # 将时间字符串转换为datetime对象
-        reminder_time = datetime.datetime.strptime(time_str, "%Y-%m-%d %H:%M")
-        # 将提醒内容和时间存储在数据库或内存中
-        # 这里可以使用一个列表来存储定时消息
-        timer_messages.append((reminder_time, reminder_content))
-        print(f"定时消息已添加: {reminder_time} - {reminder_content}")
+        for line in message.splitlines():
+            time_str, reminder_content = line.split(",", 1)
+            time_str = time_str.strip()
+            reminder_content = reminder_content.strip()
+            # 将时间字符串转换为datetime对象
+            reminder_time = datetime.datetime.strptime(time_str, "%Y-%m-%d %H:%M")
+            # 将提醒内容和时间存储在数据库或内存中
+            # 这里可以使用一个列表来存储定时消息
+            timer_messages.append((reminder_time, reminder_content))
+            print(f"定时消息已添加: {reminder_time} - {reminder_content}")
     except ValueError:
         print("消息格式错误，请使用 '时间 , 提醒内容' 的格式")
 
