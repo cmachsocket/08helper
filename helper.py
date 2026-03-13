@@ -174,7 +174,12 @@ def main():
     file.close()
     
     while True: # 每5秒检查一次新消息
-        messages = get_message()
+        try :
+            messages = get_message()
+        except Exception as e:
+            print(f"Error getting messages: {e}")
+            time.sleep(5)
+            continue
         send_message(
         message_queue=check_new_message(messages))
         check_timer_messages()
