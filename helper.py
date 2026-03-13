@@ -199,3 +199,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# proot-distro sh napcat -- bash -c "xvfb-run -a /root/Napcat/opt/QQ/qq --no-sandbox"
