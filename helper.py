@@ -64,6 +64,9 @@ def check_timer_messages():
     global timer_messages
     current_time = datetime.datetime.now()
     for reminder_time, reminder_content in timer_messages:
+        if reminder_time.year != current_time.year or reminder_time.month != current_time.month or reminder_time.day != current_time.day:
+            timer_messages.remove((reminder_time, reminder_content))
+            continue
         if current_time >= reminder_time:
             # 发送提醒消息
             print(f"发送提醒消息: {reminder_content}")
@@ -90,11 +93,11 @@ async def run_gpt_task(message):
         messages=[
             {
                 'role': 'system',
-                'content': '你是计算机8班的班级小助手,负责设置定时消息和转发消息,帮助同学们更好地使用机器人。'
+                'content': '你是计算机8班的班级小助手,负责设置定时消息和转发消息,帮助同学们更好地使用机器人。当前时间是 '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             },
             {
                 'role': 'user',
-                'content': message+"\n, 阅读这段消息后，判断是否需要提醒同学们，如果需要，请回复 \"时间 , 提醒内容\" , 其中时间的格式为 \"2026-MM-DD HH:MM\",半角逗号,提前半小时，如果不需要提醒，请回复 \"不需要提醒\" ,不需要任何额外的文字"
+                'content': message+"\n, 阅读这段消息后，判断是否需要提醒同学们，如果需要，请回复 \"时间 , 提醒内容\" , 其中时间的格式为 \"YYYY-MM-DD HH:MM\",半角逗号,提前半小时，如果不需要提醒，请回复 \"不需要提醒\" ,不需要任何额外的文字"
             }
         ],
     )
@@ -151,6 +154,9 @@ def send_message(group_id="1042964394", message_queue=[]):
             print(f"Error sending message {message['message_id']}: {response.status_code}")
     message_queue.clear()
 
+def get_message_from_manager(manager_id = "3077906125"):
+    pass
+
 def main():
     global token, botUrl, botPort, last_real_id, api_key, headers,timer_messages
     file = open("settings.json", "r")
@@ -160,7 +166,8 @@ def main():
     token = settings["token"]
     last_real_id = settings["last_real_id"]
     api_key = settings.get("api_key", "")
-    timer_messages = settings.get("timer_messages", [])
+    timer_messages_str = settings.get("timer_messages", [])
+    timer_messages = [(datetime.datetime.strptime(item[0], "%Y-%m-%d %H:%M"), item[1]) for item in timer_messages_str]
     # Refresh headers after loading runtime token.
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -179,7 +186,7 @@ def main():
                 "token": token,
                 "last_real_id": last_real_id,
                 "api_key": api_key,
-                "timer_messages": timer_messages
+                "timer_messages": [(item[0].strftime("%Y-%m-%d %H:%M"), item[1]) for item in timer_messages]
 
         }))
         file.close()
