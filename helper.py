@@ -3,6 +3,7 @@ import json
 import time
 import asyncio
 import datetime
+import os
 from openai import AsyncOpenAI
 """
 from openai import OpenAI
@@ -42,12 +43,33 @@ last_real_id = 0
 api_key = ""
 timer_messages=[]
 
+
+def load_env_file(file_path=".env"):
+    try:
+        with open(file_path, "r") as env_file:
+            for line in env_file:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except FileNotFoundError:
+        pass
+
 def add_timer_message(message):
     global timer_messages
     # 解析消息内容，提取时间和提醒内容
+    need_forward = True
     try:
         print(f"GPT回复的消息: {message}")
         for line in message.splitlines():
+            if line.strip() == "不需要转发":
+                print("GPT回复: 不需要转发")
+                need_forward = False
+                continue
             time_str, reminder_content = line.split(",", 1)
             time_str = time_str.strip()
             reminder_content = reminder_content.strip()
@@ -57,9 +79,13 @@ def add_timer_message(message):
             # 这里可以使用一个列表来存储定时消息
             timer_messages.append((reminder_time, reminder_content))
             print(f"定时消息已添加: {reminder_time} - {reminder_content}")
+        return need_forward
     except ValueError:
-        print("消息格式错误，请使用 '时间 , 提醒内容' 的格式")
-
+        if message.strip() == "不需要提醒":
+            print("GPT回复: 不需要提醒")
+        else:
+            send_message_to_manager(f"GPT回复的消息格式错误: {message}")
+        return need_forward
 def check_timer_messages():
     global timer_messages
     current_time = datetime.datetime.now()
@@ -97,12 +123,12 @@ async def run_gpt_task(message):
             },
             {
                 'role': 'user',
-                'content': message+"\n, 阅读这段消息后，判断是否需要提醒同学们，如果需要，请回复 \"时间 , 提醒内容\" , 其中时间的格式为 \"YYYY-MM-DD HH:MM\",半角逗号,提前半小时，如果不需要提醒，请回复 \"不需要提醒\" ,不需要任何额外的文字"
+                'content': message+"\n, 阅读这段消息后，先判断是否需要转发 ， 如果需要转发，请回复 \"需要转发\" ，如果不需要转发，请回复 \"不需要转发\" 。同时，判断是否需要提醒同学们，如果需要，请换一行回复 \"时间 , 提醒内容\" , 其中时间的格式为 \"YYYY-MM-DD HH:MM\",半角逗号,提前半小时，如果不需要提醒，请换一行回复 \"不需要提醒\" ,不需要任何额外的文字"
             }
         ],
     )
     print(response.choices[0].message.content)
-    add_timer_message(response.choices[0].message.content)
+    return add_timer_message(response.choices[0].message.content)
 
 # 783463810
 def get_message():
@@ -139,7 +165,9 @@ def send_message(group_id="1042964394", message_queue=[]):
 
         print(message["message_id"])
         if not message["message"].startswith("[CQ:"):
-            asyncio.run(run_gpt_task(message["message"]))
+            need_forward = asyncio.run(run_gpt_task(message["message"]))
+            if not need_forward:
+                continue
         response = requests.post(
             f"{botUrl}:{botPort}/forward_group_single_msg",
             json={
@@ -154,18 +182,33 @@ def send_message(group_id="1042964394", message_queue=[]):
             print(f"Error sending message {message['message_id']}: {response.status_code}")
     message_queue.clear()
 
+def send_message_to_manager(message):
+    response = requests.post(
+        f"{botUrl}:{botPort}/send_private_msg",
+        json={
+            "user_id": "3077906125",
+            "message": message
+        },
+        headers=headers,
+    )
+    if response.status_code == 200:
+        print(response.json())
+    else:
+        print(f"Error sending message to manager: {response.status_code}")
+
 def get_message_from_manager(manager_id = "3077906125"):
     pass
 
 def main():
     global token, botUrl, botPort, last_real_id, api_key, headers,timer_messages
+    load_env_file()
     file = open("settings.json", "r")
     settings = json.load(file)
     botUrl = settings["botUrl"]
     botPort = settings["botPort"]
     token = settings["token"]
     last_real_id = settings["last_real_id"]
-    api_key = settings.get("api_key", "")
+    api_key = os.getenv("API_KEY", "")
     timer_messages_str = settings.get("timer_messages", [])
     timer_messages = [(datetime.datetime.strptime(item[0], "%Y-%m-%d %H:%M"), item[1]) for item in timer_messages_str]
     # Refresh headers after loading runtime token.
@@ -190,7 +233,6 @@ def main():
                 "botPort": botPort,
                 "token": token,
                 "last_real_id": last_real_id,
-                "api_key": api_key,
                 "timer_messages": [(item[0].strftime("%Y-%m-%d %H:%M"), item[1]) for item in timer_messages]
 
         }))
