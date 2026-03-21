@@ -5,34 +5,6 @@ import asyncio
 import datetime
 import os
 from openai import AsyncOpenAI
-"""
-from openai import OpenAI
-
-client = OpenAI(
-    api_key="MODELSCOPE_ACCESS_TOKEN", # 请替换成您的ModelScope Access Token
-    base_url="https://api-inference.modelscope.cn/v1/"
-)
-
-
-response = client.chat.completions.create(
-    model="Qwen/Qwen3.5-35B-A3B", # ModelScope Model-Id
-    messages=[
-        {
-            'role': 'system',
-            'content': 'You are a helpful assistant.'
-        },
-        {
-            'role': 'user',
-            'content': '用python写一下快排'
-        }
-    ],
-    stream=True
-)
-
-for chunk in response:
-    print(chunk.choices[0].delta.content, end='', flush=True)
-
-"""
 
 
 botUrl = ""
@@ -69,6 +41,8 @@ def add_timer_message(message):
             if line.strip() == "不需要转发":
                 print("GPT回复: 不需要转发")
                 need_forward = False
+                continue
+            elif line.strip() == "需要转发":
                 continue
             time_str, reminder_content = line.split(",", 1)
             time_str = time_str.strip()
@@ -112,10 +86,10 @@ async def run_gpt_task(message):
     global api_key
     client  = AsyncOpenAI(
         api_key=api_key,
-        base_url="https://api-inference.modelscope.cn/v1/"
+        base_url="https://api.minimaxi.com/v1"
     )
     response = await client.chat.completions.create(
-        model="Qwen/Qwen3.5-35B-A3B", # ModelScope Model-Id
+        model="MiniMax-M2.7", # ModelScope Model-Id
         messages=[
             {
                 'role': 'system',
