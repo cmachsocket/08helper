@@ -100,6 +100,11 @@ async def run_gpt_task(message):
                 'content': message+"\n, 阅读这段消息后，先判断是否需要转发 ， 如果需要转发，请回复 \"需要转发\" ，如果不需要转发，请回复 \"不需要转发\" 。同时，判断是否需要提醒同学们，如果需要，请换一行回复 \"时间 , 提醒内容\" , 其中时间的格式为 \"YYYY-MM-DD HH:MM\",半角逗号,提前半小时，如果不需要提醒，请换一行回复 \"不需要提醒\" ,不需要任何额外的文字"
             }
         ],
+        extra_body={
+            "thinking": {
+                "type": "disabled"
+            }
+        }
     )
     print(response.choices[0].message.content)
     return add_timer_message(response.choices[0].message.content)
