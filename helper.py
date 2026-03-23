@@ -101,9 +101,7 @@ async def run_gpt_task(message):
             }
         ],
         extra_body={
-            "thinking": {
-                "type": "disabled"
-            }
+            "reasoning_split": True
         }
     )
     print(response.choices[0].message.content)
