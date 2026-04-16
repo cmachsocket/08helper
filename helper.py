@@ -82,6 +82,18 @@ def check_timer_messages():
             # 从列表中移除已发送的定时消息
             timer_messages.remove((reminder_time, reminder_content))
 
+async def run_gpt_task_with_retry(message, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return await run_gpt_task(message)
+        except Exception as e:
+            print(f"API调用失败 (尝试 {attempt+1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)
+            else:
+                print("API重试耗尽，跳过该消息")
+                return True
+
 async def run_gpt_task(message):
     global api_key
     client  = AsyncOpenAI(
@@ -142,7 +154,7 @@ def send_message(group_id="1042964394", message_queue=[]):
 
         print(message["message_id"])
         if not message["message"].startswith("[CQ:"):
-            need_forward = asyncio.run(run_gpt_task(message["message"]))
+            need_forward = asyncio.run(run_gpt_task_with_retry(message["message"]))
             if not need_forward:
                 continue
         response = requests.post(
@@ -200,8 +212,13 @@ def main():
             print(f"Error getting messages: {e}")
             time.sleep(5)
             continue
-        send_message(
-        message_queue=check_new_message(messages))
+        try:
+            send_message(
+            message_queue=check_new_message(messages))
+        except Exception as e:
+            print(f"send_message出错: {e}")
+            time.sleep(5)
+            continue
         check_timer_messages()
         print("Loop completed, sleeping for 5 seconds...")
         file = open("settings.json","w") 
